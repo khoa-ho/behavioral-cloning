@@ -2,8 +2,10 @@ import os
 import cv2
 import numpy as np
 import pandas as pd
+from keras import optimizers
 from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout, Flatten, Reshape, Lambda, Cropping2D
+from keras.layers import Dense, Activation, Dropout, Flatten, \
+                         Lambda, Cropping2D, Conv2D, MaxPooling2D
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
 
@@ -11,7 +13,9 @@ samples = pd.read_csv('driving_log.csv', header=None).as_matrix()
 train_samples, valid_samples = train_test_split(samples, test_size=0.2)
 
 # Hyperparameters
+EPOCHS = 3
 BATCH_SIZE = 32
+LEARNING_RATE = 1e-4
 
 def generator(samples, batch_size=32):
     num_samples = len(samples)
@@ -23,7 +27,7 @@ def generator(samples, batch_size=32):
             images = []
             angles = []
             for batch_sample in batch_samples:
-                name = os.path.join('IMG', (batch_sample[0]).split('\\')[0])
+                name = os.path.join('IMG', (batch_sample[0]).split('\\')[-1])
                 center_image = cv2.imread(name)
                 center_image_flipped = cv2.flip(center_image, 1)
                 center_angle = float(batch_sample[3])
@@ -38,25 +42,30 @@ def generator(samples, batch_size=32):
 train_generator = generator(train_samples, batch_size=BATCH_SIZE)
 valid_generator = generator(valid_samples, batch_size=BATCH_SIZE)
 
-shape = (160, 320, 3) # Trimmed image format
+SHAPE = (160, 320, 3) # Trimmed image format
 
 # Define the model
 model = Sequential()
 # Normalize input
-model.add(Lambda(lambda x: x/127.5 - 1.,
-                 input_shape=shape,
-                 output_shape=shape))
-model.add(Cropping2D(cropping=((70, 22), (0, 0))))
+model.add(Cropping2D(input_shape=SHAPE, cropping=((70, 22), (0, 0))))
+model.add(Lambda(lambda x: x/127.5 - 1.))
+model.add(Conv2D(16, 3, 3, activation='selu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Conv2D(32, 3, 3, activation='selu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Conv2D(64, 3, 3, activation='selu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Flatten())
-model.add(Dense(10))
-model.add(Activation('relu'))
+model.add(Dense(100, activation='selu'))
+model.add(Dense(50, activation='selu'))
+model.add(Dense(10, activation='selu'))
 model.add(Dense(1))
 # Train the model
-model.compile(loss='mse', optimizer='adam')
+model.compile(loss='mse', optimizer=optimizers.Adam(lr=LEARNING_RATE))
 model.fit_generator(train_generator, 
                     steps_per_epoch=np.ceil(len(train_samples)/BATCH_SIZE),
                     validation_data=valid_generator,
                     validation_steps=np.ceil(len(train_samples)/BATCH_SIZE),
-                    epochs=3)
+                    epochs=EPOCHS)
 # Save the model
 model.save('model.h5')
