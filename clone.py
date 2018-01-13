@@ -22,9 +22,11 @@ def generator(samples, batch_size=32):
             
             images = []
             angles = []
+            print(os.path.split(batch_samples[0][0]))
+            print(os.path.splitext(batch_samples[0][0]))
+            print(os.path.basename(batch_samples[0][0]))
             for batch_sample in batch_samples:
-                name = os.path.join('IMG', batch_sample[0].split('/')[0])
-                print(name)
+                name = os.path.join('IMG', os.path.basename(batch_sample[0]))
                 center_image = cv2.imread(name)
                 center_image_flipped = cv2.flip(center_image, 1)
                 center_angle = float(batch_sample[3])
