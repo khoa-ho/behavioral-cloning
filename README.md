@@ -68,13 +68,13 @@ On the other hand, my general approach to data has been removing unncessary feat
 
 My final model consisted of the following layers:
 
-| Layer         		|     Description	        					| Comment
+| Layer         		    |     Description	        					            | Comment
 |:---------------------:|:---------------------------------------------:| 
-| Input         		| 14x40x1 image    							| only the S channel of the original HSV image
-| Normalization         		|     							|  
+| Input         		    | 14x40x1 image    							                | only the S channel of the original HSV image
+| Normalization         |     							                            |  
 | Convolution 3x3     	| 1x1 stride, 'valid' padding, outputs 12x38x2 	|
-| SELU					|												|mean and variance maintained normalized
-| Max pooling	      	| 4x4 stride,  outputs 3x9x2 				|
-| Alpha dropout					|0.25 keep prob												|mean and variance maintained normalized
-| Flatten | outputs 54 |
-| Fully connected		| outputs 1      									|
+| SELU					        |												                        | mean and variance maintained normalized
+| Max pooling	      	  | 4x4 stride,  outputs 3x9x2 				            |
+| Alpha dropout					| 0.25 keep prob											          | mean and variance maintained normalized
+| Flatten               | outputs 54                                    |
+| Fully connected		    | outputs 1      									              |
