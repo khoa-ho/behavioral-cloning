@@ -12,7 +12,7 @@ samples = pd.read_csv('driving_log.csv').as_matrix()
 train_samples, valid_samples = train_test_split(samples, test_size=0.2)
 
 # Hyperparameters
-EPOCHS = 1
+EPOCHS = 6
 BATCH_SIZE = 32
 LEARNING_RATE = 1.0e-3
 
@@ -30,8 +30,9 @@ model.add(MaxPooling2D((4,4)))
 model.add(AlphaDropout(0.25))
 model.add(Flatten())
 model.add(Dense(1))
-# Train the model
 model.compile(loss='mse', optimizer=optimizers.Adam(lr=LEARNING_RATE))
+
+# Train the model
 model.fit_generator(train_generator, 
                     steps_per_epoch=np.ceil(len(train_samples)/BATCH_SIZE),
                     validation_data=valid_generator,
