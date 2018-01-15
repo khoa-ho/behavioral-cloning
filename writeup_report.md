@@ -50,14 +50,13 @@ The model.py file contains the code for training and saving the convolution neur
 
 #### 1. An appropriate model architecture has been employed
 
-I used a small convolutional neural network with SELU activation function and Alpha Dropout. 
-[Self-Normalizing Neural Networks ]https://arxiv.org/abs/1706.02515
+I used a small convolutional neural network with SELU activation function and Alpha Dropout.
+
+[Self-Normalizing Neural Networks](https://arxiv.org/abs/1706.02515)
 
 #### 2. Attempts to reduce overfitting in the model
 
 The model contains a dropout layer in order to reduce overfitting (clone.py lines 30). 
-
-The model was trained and validated on different data sets to ensure that the model was not overfitting (code line 10-16). The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
 
 #### 3. Model parameter tuning
 
@@ -71,52 +70,21 @@ I used a combination of self-collected data and the provided Udacity dataset. Fo
 
 #### 1. Solution Design Approach
 
-The overall strategy for deriving a model architecture was to ...
+The overall strategy for deriving a model architecture was to start from the [NVIDIA model](https://devblogs.nvidia.com/parallelforall/deep-learning-self-driving-cars/) because we know that it works for data from real cameras. However, data from the simulator is much simpler and more constrained, so the model was iteratively simplified so that we can have a small network that is much faster to train on but is still effective at controlling the car inside the simulator.
 
-My first step was to use a convolution neural network model similar to the ... I thought this model might be appropriate because ...
-
-In order to gauge how well the model was working, I split my image and steering angle data into a training and validation set. I found that my first model had a low mean squared error on the training set but a high mean squared error on the validation set. This implied that the model was overfitting. 
-
-To combat the overfitting, I modified the model so that ...
-
-Then I ... 
-
-The final step was to run the simulator to see how well the car was driving around track one. There were a few spots where the vehicle fell off the track... to improve the driving behavior in these cases, I ....
-
-At the end of the process, the vehicle is able to drive autonomously around the track without leaving the road.
+On the other hand, my general approach to data has been removing unncessary features while augmenting whenever I can. First, I cropped the top 68 pixels and the bottom 22 pixels of the images since they doesn't contain useful information (sky, trees, the front of the car etc...). After realizing that the model drove the car better at lower graphic quality, I suspected that helping the model focus on high-level representation such as road, lane lines, etc. will make it better at driving in the simulator. I can either apply a Gaussian blur or downsize the images. I chose the latter as it also allowed fast training. In addition, I augmented the data by flipping all the images horizontally and flipping the sign of the steering angle. Moreover, I used left and right images with a correction applied to the steering angle. 
 
 #### 2. Final Model Architecture
 
-The final model architecture (model.py lines 18-24) consisted of a convolution neural network with the following layers and layer sizes ...
+My final model consisted of the following layers:
 
-Here is a visualization of the architecture (note: visualizing the architecture is optional according to the project rubric)
-
-![alt text][image1]
-
-#### 3. Creation of the Training Set & Training Process
-
-To capture good driving behavior, I first recorded two laps on track one using center lane driving. Here is an example image of center lane driving:
-
-![alt text][image2]
-
-I then recorded the vehicle recovering from the left side and right sides of the road back to center so that the vehicle would learn to .... These images show what a recovery looks like starting from ... :
-
-![alt text][image3]
-![alt text][image4]
-![alt text][image5]
-
-Then I repeated this process on track two in order to get more data points.
-
-To augment the data sat, I also flipped images and angles thinking that this would ... For example, here is an image that has then been flipped:
-
-![alt text][image6]
-![alt text][image7]
-
-Etc ....
-
-After the collection process, I had X number of data points. I then preprocessed this data by ...
-
-
-I finally randomly shuffled the data set and put Y% of the data into a validation set. 
-
-I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was Z as evidenced by ... I used an adam optimizer so that manually training the learning rate wasn't necessary.
+| Layer         		|     Description	        					| Comment
+|:---------------------:|:---------------------------------------------:| 
+| Input         		| 14x40x1 image    							| only the S channel of the original HSV image
+| Normalization         		|     							|  
+| Convolution 3x3     	| 1x1 stride, 'valid' padding, outputs 12x38x2 	|
+| SELU					|												|mean and variance maintained normalized
+| Max pooling	      	| 4x4 stride,  outputs 3x9x2 				|
+| Alpha dropout					|0.25 keep prob												|mean and variance maintained normalized
+| Flatten | outputs 54 |
+| Fully connected		| outputs 1      									||
