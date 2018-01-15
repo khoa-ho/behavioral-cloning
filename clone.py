@@ -1,64 +1,34 @@
-import os
-import cv2
 import numpy as np
 import pandas as pd
 from keras import optimizers
-from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout, Flatten, \
-                         Lambda, Cropping2D, Conv2D, MaxPooling2D
-from sklearn.utils import shuffle
+from keras.models import Sequential, load_model
+from keras.layers import Dense, Flatten, \
+                         Lambda, Conv2D, MaxPooling2D
+from keras.layers.noise import AlphaDropout
 from sklearn.model_selection import train_test_split
+from data import SHAPE, generator
 
-samples = pd.read_csv('driving_log.csv', header=None).as_matrix()
+samples = pd.read_csv('driving_log.csv').as_matrix()
 train_samples, valid_samples = train_test_split(samples, test_size=0.2)
 
 # Hyperparameters
-EPOCHS = 3
+EPOCHS = 1
 BATCH_SIZE = 32
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 1.0e-3
 
-def generator(samples, batch_size=32):
-    num_samples = len(samples)
-    while 1:
-        shuffle(samples)
-        for offset in range(0, num_samples, batch_size):
-            batch_samples = samples[offset:offset+batch_size]
-            
-            images = []
-            angles = []
-            for batch_sample in batch_samples:
-                name = os.path.join('IMG', (batch_sample[0]).split('\\')[-1])
-                center_image = cv2.imread(name)
-                center_image_flipped = cv2.flip(center_image, 1)
-                center_angle = float(batch_sample[3])
-                center_angle_flipped = center_angle*(-1)
-                images.extend([center_image, center_image_flipped])
-                angles.extend([center_angle, center_angle_flipped])
-            
-            X_train = np.array(images)
-            y_train = np.array(angles)
-            yield shuffle(X_train, y_train)
-
+# Data
 train_generator = generator(train_samples, batch_size=BATCH_SIZE)
 valid_generator = generator(valid_samples, batch_size=BATCH_SIZE)
 
-SHAPE = (160, 320, 3) # Trimmed image format
 
 # Define the model
+#model = load_model("./model.h5") 
 model = Sequential()
-# Normalize input
-model.add(Cropping2D(input_shape=SHAPE, cropping=((70, 22), (0, 0))))
-model.add(Lambda(lambda x: x/127.5 - 1.))
-model.add(Conv2D(16, 3, 3, activation='selu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Conv2D(32, 3, 3, activation='selu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Conv2D(64, 3, 3, activation='selu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Lambda(lambda x: x/127.5 - 1., input_shape=SHAPE))
+model.add(Conv2D(2, (3, 3), activation='selu', kernel_initializer='lecun_normal'))
+model.add(MaxPooling2D((4,4)))
+model.add(AlphaDropout(0.25))
 model.add(Flatten())
-model.add(Dense(100, activation='selu'))
-model.add(Dense(50, activation='selu'))
-model.add(Dense(10, activation='selu'))
 model.add(Dense(1))
 # Train the model
 model.compile(loss='mse', optimizer=optimizers.Adam(lr=LEARNING_RATE))
@@ -67,5 +37,6 @@ model.fit_generator(train_generator,
                     validation_data=valid_generator,
                     validation_steps=np.ceil(len(train_samples)/BATCH_SIZE),
                     epochs=EPOCHS)
+
 # Save the model
-model.save('model.h5')
+model.save("./model.h5")
